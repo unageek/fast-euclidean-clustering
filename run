@@ -1,0 +1,51 @@
+#!/bin/bash
+set -eu
+
+if [ $# -lt 1 ]; then
+  echo 'No task is specified.' >&2
+  exit 1
+fi
+
+args=()
+found_double_hyphen=false
+for arg in "$@"; do
+  if [ "$arg" = '--' ]; then
+    found_double_hyphen=true
+    continue
+  fi
+  if [ "$found_double_hyphen" = true ]; then
+    args+=("$arg")
+  fi
+done
+external_args="${args[@]}"
+
+cd $(dirname $0)
+
+case $1 in
+  'init-vcpkg' )
+    cd vcpkg
+    ./bootstrap-vcpkg.sh
+    ./vcpkg remove --outdated --recurse
+    ./vcpkg install '@../vcpkg.txt' --triplet=x64-linux
+    ;;
+  'cmake' )
+    mkdir -p build
+    cd build
+    cmake .. -GNinja $external_args
+    ;;
+  'b'|'build' )
+    cd build
+    ninja
+    ;;
+  'r'|'run' )
+    ./build/$2 $external_args
+    ;;
+  't'|'test' )
+    cd build
+    ctest -V
+    ;;
+  * )
+    echo "Unrecognized task: $1" >&2
+    exit 1
+    ;;
+esac
