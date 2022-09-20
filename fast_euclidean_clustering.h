@@ -36,6 +36,12 @@
 
 template <typename PointT>
 class FastEuclideanClustering : public pcl::PCLBase<PointT> {
+  using Base = pcl::PCLBase<PointT>;
+  using Base::deinitCompute;
+  using Base::indices_;
+  using Base::initCompute;
+  using Base::input_;
+
 public:
   using KdTree = pcl::search::Search<PointT>;
   using KdTreePtr = typename KdTree::Ptr;
@@ -80,13 +86,13 @@ public:
   void
   segment(std::vector<pcl::PointIndices>& clusters)
   {
-    this->initCompute();
+    initCompute();
 
     const pcl::index_t invalid_label = -1;
-    std::vector<pcl::index_t> labels(this->input_->size(), invalid_label);
-    std::vector<bool> removed(this->input_->size(), false);
+    std::vector<pcl::index_t> labels(input_->size(), invalid_label);
+    std::vector<bool> removed(input_->size(), false);
 
-    tree_->setInputCloud(this->input_, this->indices_);
+    tree_->setInputCloud(input_, indices_);
 
     pcl::Indices nn_indices;
     std::vector<float> nn_distances;
@@ -98,7 +104,7 @@ public:
     {
       pcl::index_t next_p = 0;
       pcl::index_t label = 0;
-      while (next_p < static_cast<pcl::index_t>(this->input_->size())) {
+      while (next_p < static_cast<pcl::index_t>(input_->size())) {
         boost::add_edge(label, label, g);
         queue.push(next_p);
         while (!queue.empty()) {
@@ -134,7 +140,7 @@ public:
           }
         }
 
-        while (next_p < static_cast<pcl::index_t>(this->input_->size()) &&
+        while (next_p < static_cast<pcl::index_t>(input_->size()) &&
                removed.at(next_p)) {
           next_p++;
         }
@@ -148,13 +154,13 @@ public:
     auto num_components = boost::connected_components(g, label_map.data());
     clusters.resize(num_components);
 
-    for (auto index : *this->indices_) {
+    for (auto index : *indices_) {
       auto label = labels.at(index);
       auto new_label = label_map.at(label);
       clusters.at(new_label).indices.push_back(index);
     }
 
-    this->deinitCompute();
+    deinitCompute();
   }
 
 private:
