@@ -47,6 +47,8 @@ public:
   using KdTreePtr = typename KdTree::Ptr;
   using Graph = boost::adjacency_list<boost::setS, boost::vecS, boost::undirectedS>;
 
+  FastEuclideanClustering() : cluster_tolerance_(0.0), quality_(0.0), tree_() {}
+
   double
   getClusterTolerance() const
   {
