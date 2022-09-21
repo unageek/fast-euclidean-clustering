@@ -23,6 +23,7 @@
 #pragma once
 
 #include <pcl/search/kdtree.h>
+#include <pcl/search/organized.h>
 #include <pcl/search/search.h>
 #include <pcl/pcl_base.h>
 
@@ -88,13 +89,22 @@ public:
   void
   segment(std::vector<pcl::PointIndices>& clusters)
   {
-    initCompute();
+    clusters.clear();
+
+    if (!initCompute() || input_->empty() || indices_->empty())
+      return;
+
+    if (!tree_) {
+      if (input_->isOrganized())
+        tree_.reset(new pcl::search::OrganizedNeighbor<PointT>);
+      else
+        tree_.reset(new pcl::search::KdTree<PointT>);
+    }
+    tree_->setInputCloud(input_, indices_);
 
     const pcl::index_t invalid_label = -1;
     std::vector<pcl::index_t> labels(input_->size(), invalid_label);
     std::vector<bool> removed(input_->size(), false);
-
-    tree_->setInputCloud(input_, indices_);
 
     pcl::Indices nn_indices;
     std::vector<float> nn_distances;
