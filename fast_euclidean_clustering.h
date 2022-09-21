@@ -33,6 +33,9 @@
 #include <queue>
 
 #include <cmath>
+#include <iterator>
+#include <limits>
+#include <utility>
 #include <vector>
 
 template <typename PointT>
@@ -48,7 +51,13 @@ public:
   using KdTreePtr = typename KdTree::Ptr;
   using Graph = boost::adjacency_list<boost::setS, boost::vecS, boost::undirectedS>;
 
-  FastEuclideanClustering() : cluster_tolerance_(0.0), quality_(0.0), tree_() {}
+  FastEuclideanClustering()
+  : cluster_tolerance_(0.0)
+  , max_cluster_size_(std::numeric_limits<pcl::uindex_t>::max())
+  , min_cluster_size_(1)
+  , quality_(0.0)
+  , tree_()
+  {}
 
   double
   getClusterTolerance() const
@@ -60,6 +69,30 @@ public:
   setClusterTolerance(double tolerance)
   {
     cluster_tolerance_ = tolerance;
+  }
+
+  pcl::uindex_t
+  getMaxClusterSize() const
+  {
+    return max_cluster_size_;
+  }
+
+  void
+  setMaxClusterSize(pcl::uindex_t max_cluster_size)
+  {
+    max_cluster_size_ = max_cluster_size;
+  }
+
+  pcl::uindex_t
+  getMinClusterSize() const
+  {
+    return min_cluster_size_;
+  }
+
+  void
+  setMinClusterSize(pcl::uindex_t min_cluster_size)
+  {
+    min_cluster_size_ = min_cluster_size;
   }
 
   double
@@ -172,11 +205,28 @@ public:
       clusters.at(new_label).indices.push_back(index);
     }
 
+    // Remove small and large clusters.
+
+    auto read = clusters.begin();
+    auto write = clusters.begin();
+    for (; read != clusters.end(); ++read) {
+      if (read->indices.size() >= min_cluster_size_ &&
+          read->indices.size() <= max_cluster_size_) {
+        if (read != write) {
+          *write = std::move(*read);
+        }
+        ++write;
+      }
+    }
+    clusters.resize(std::distance(clusters.begin(), write));
+
     deinitCompute();
   }
 
 private:
   double cluster_tolerance_;
+  pcl::uindex_t max_cluster_size_;
+  pcl::uindex_t min_cluster_size_;
   double quality_;
   KdTreePtr tree_;
 };
