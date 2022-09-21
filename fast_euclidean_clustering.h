@@ -146,11 +146,14 @@ public:
     std::queue<pcl::index_t> queue;
 
     {
-      pcl::index_t next_p = 0;
       pcl::index_t label = 0;
-      while (next_p < static_cast<pcl::index_t>(input_->size())) {
+      for (auto index : *indices_) {
+        if (removed.at(index))
+          continue;
+
         boost::add_edge(label, label, g);
-        queue.push(next_p);
+
+        queue.push(index);
         while (!queue.empty()) {
           auto p = queue.front();
           queue.pop();
@@ -184,10 +187,6 @@ public:
           }
         }
 
-        while (next_p < static_cast<pcl::index_t>(input_->size()) &&
-               removed.at(next_p)) {
-          next_p++;
-        }
         label++;
       }
     }
