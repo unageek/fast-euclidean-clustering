@@ -135,8 +135,7 @@ public:
     }
     tree_->setInputCloud(input_, indices_);
 
-    const pcl::index_t invalid_label = -1;
-    std::vector<pcl::index_t> labels(input_->size(), invalid_label);
+    std::vector<pcl::index_t> labels(input_->size(), pcl::UNAVAILABLE);
     std::vector<bool> removed(input_->size(), false);
 
     pcl::Indices nn_indices;
@@ -165,7 +164,7 @@ public:
             auto q = nn_indices.at(i);
             auto q_label = labels.at(q);
 
-            if (q_label != invalid_label && q_label != label) {
+            if (q_label != pcl::UNAVAILABLE && q_label != label) {
               boost::add_edge(label, q_label, g);
             }
 
